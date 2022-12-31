@@ -1,10 +1,8 @@
-/*
+.vs
 
-!source/
-!test-crypto-utils-library/
+cmake/*
+!cmake/CMakeLists.txt
+compile_commands.json
 
-!crypto-utils-library.pro
-
-!.gitignore
-!README.md
-!LICENSE
+*.o
+*.exe
