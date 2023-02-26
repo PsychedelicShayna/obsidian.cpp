@@ -2,6 +2,7 @@
 
 #include "source/include/obsidian/encoding.hpp"
 #include "source/include/obsidian/random.hpp"
+
 using namespace obsidian;
 
 const std::string& QBF_TEST_STRING =
@@ -65,6 +66,9 @@ bool pkcs7_validator(const std::vector<uint8_t>& bytes,
     const uint8_t& last_byte = *bytes.cend();
 
     if(last_byte != correct_difference) {
+        std::cout << "Difference is " << static_cast<uint32_t>(last_byte)
+                  << " should have been " << correct_difference << "\n";
+
         return false;
     }
 
@@ -74,33 +78,42 @@ bool pkcs7_validator(const std::vector<uint8_t>& bytes,
         [&](const auto& byte) -> bool { return byte == last_byte; });
 
     if(!valid_padding) {
+        for(const auto& byte : bytes) {
+            std::cout << std::hex << std::setw(2) << std::setfill('0')
+                      << static_cast<uint32_t>(byte) << ", ";
+        }
+
+        std::cout << '\n';
+
         return false;
     }
 
     return true;
 }
 
-TEST(Encodings, Pkcs7KnownPad)
+TEST(Encodings, Pkcs7Padding)
 {
-    const std::vector<uint8_t>& sample_15b {
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-        0xFF,
-    };
+    const auto& padding_factor = 16;
+    const auto& fill_byte      = 0xFF;
 
-    const auto& padded = encoding::apply_pkcs7_padding(sample_15b, 16);
+    std::vector<uint8_t> sample(64, fill_byte);
 
-    ASSERT_EQ(pkcs7_validator(sample_15b, 1), true);
+    for(uint32_t i = 0; i < 64; ++i) {
+        const auto& padded = encoding::apply_pkcs7_padding(
+            {sample.begin(), sample.end() - i}, padding_factor);
+
+        const auto& last_byte = padded[padded.size() - 1];
+
+        if(i % padding_factor) {
+            const auto& delta = i % padding_factor;
+
+            ASSERT_EQ(last_byte, i % padding_factor);
+
+            for(auto i = 0; i < delta; ++i) {
+                ASSERT_EQ(padded[padded.size() - 1 - i], delta);
+            }
+        } else {
+            ASSERT_EQ(last_byte, fill_byte);
+        }
+    }
 }
