@@ -1,8 +1,10 @@
 .vs
+.cache
 
 cmake/*
 !cmake/CMakeLists.txt
-compile_commands.json
+builds/
 
 *.o
 *.exe
+*.bak
